@@ -163,7 +163,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         return visited.size() == getSize();
     }
     
-    private int countEdges() {
+    public int countEdges() {
         int count = 0;
         for (List<Edge> edgeList : neighbors) {
             count += edgeList.size();
