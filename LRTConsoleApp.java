@@ -1,17 +1,4 @@
-/**
- * CONSOLE APPLICATION with JavaFX Graph Display
- * 
- * Welcome to KL LRT System!
- * Staff ID: LR01
- * 
- * Main Menu (Press '0' to back to main menu)
- * Menu: Enter "1" to "3" for computation option.
- * 
- * 1. Create Graph
- * 2. Search for a Station
- * 3. View the LRT Network (Opens JavaFX Graph)
- * 0. Exit
- */
+
 import java.util.*;
 import java.util.Scanner;
 import java.util.List;
