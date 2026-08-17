@@ -1,9 +1,6 @@
 
 import java.util.*;
-import java.util.Scanner;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
+
 public class LRTConsoleApp {
     
     private static Scanner scanner = new Scanner(System.in);
