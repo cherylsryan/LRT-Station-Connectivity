@@ -19,7 +19,7 @@ public class LRTConsoleApp {
         int choice;
         do {
             displayMainMenu();
-            choice = getIntInput("Selection: ");
+            choice = getIntInput("");
             System.out.println();
             
             switch (choice) {
