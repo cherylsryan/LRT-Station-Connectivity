@@ -21,7 +21,6 @@ public class LRTStation {
         return name.equalsIgnoreCase("Masjid Jamek");
     }
     
-    @Override
     public String toString() {
         if (isInterchange()) {
             return "★ " + name + " (Interchange)";
@@ -35,16 +34,14 @@ public class LRTStation {
         }
         return name;
     }
-    
-    @Override
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LRTStation station = (LRTStation) o;
         return Objects.equals(name, station.name);
     }
-    
-    @Override
+
     public int hashCode() {
         return Objects.hash(name);
     }
