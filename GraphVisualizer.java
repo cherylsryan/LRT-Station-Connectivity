@@ -1,4 +1,3 @@
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -20,33 +19,36 @@ public class GraphVisualizer extends Application {
     private static UnweightedGraph<LRTStation> network;
     private static String title = "LRT Network";
     private static Stage primaryStage;
+    private static boolean isShowing = false;
 
     private static final Map<String, double[]> positions = new HashMap<>();
 
     private static final Color KELANA_JAYA_COLOR = Color.rgb(0, 105, 210);
-    private static final Color KELANA_JAYA_LIGHT = Color.rgb(70, 160, 240);
     private static final Color AMPANG_COLOR = Color.rgb(220, 50, 120);
-    private static final Color AMPANG_LIGHT = Color.rgb(240, 100, 160);
     private static final Color INTERCHANGE_COLOR = Color.rgb(255, 185, 0);
     private static final Color INTERCHANGE_DARK = Color.rgb(200, 140, 0);
 
-    private static boolean isLaunched = false;
-
     public static void displayGraph(UnweightedGraph<LRTStation> graph, String windowTitle) {
-    network = graph;
-    title = windowTitle;
-    
-    new Thread(() -> {
-        Application.launch(GraphVisualizer.class);
-    }).start();
-}
+        network = graph;
+        title = windowTitle;
 
-    @Override
+        if (primaryStage != null && isShowing) {
+            primaryStage.toFront();
+            return;
+        }
+
+        // creates a NEW JavaFX instance
+        new Thread(() -> {
+            Application.launch(GraphVisualizer.class);
+        }).start();
+    }
+
     public void start(Stage stage) {
         primaryStage = stage;
 
         if (network == null || network.getSize() == 0) {
             System.out.println("Network is empty. Nothing to display.");
+            Platform.exit();
             return;
         }
 
@@ -62,10 +64,14 @@ public class GraphVisualizer extends Application {
         Scene scene = new Scene(pane, 1400, 800);
         stage.setTitle(title);
         stage.setScene(scene);
+
         stage.setOnCloseRequest(e -> {
-            Platform.exit();
+            isShowing = false;
+            stage.hide();  
         });
+
         stage.show();
+        isShowing = true;
     }
 
     private void drawBackground(Pane pane) {
@@ -84,127 +90,139 @@ public class GraphVisualizer extends Application {
     }
 
     private void calculatePositions() {
-    positions.clear();
-    List<LRTStation> stations = network.getAllStations();
-    
-    // Define the standard station orders
-    String[] kelanaJayaOrder = {"KLCC", "Kampung Baru", "Dang Wangi", "Masjid Jamek", "Pasar Seni"};
-    String[] ampangOrder = {"PWTC", "Sultan Ismail", "Bandaraya", "Masjid Jamek", "Plaza Rakyat"};
-    
-    double startX = 150;
-    double spacing = 200;
-    double topY = 200;
-    double bottomY = 480;
-    
-    // Place Kelana Jaya line stations
-    for (int i = 0; i < kelanaJayaOrder.length; i++) {
-        String name = kelanaJayaOrder[i];
-        if (stationExists(name)) {
-            double x = startX + (i * spacing);
-            if (!name.equals("Masjid Jamek")) {
+        positions.clear();
+        List<LRTStation> stations = network.getAllStations();
+
+        // stations
+        String[] kelanaJayaOrder = {"KLCC", "Kampung Baru", "Dang Wangi", "Masjid Jamek", "Pasar Seni"};
+        String[] ampangOrder = {"PWTC", "Sultan Ismail", "Bandaraya", "Masjid Jamek", "Plaza Rakyat"};
+
+        double startX = 120;
+        double spacing = 200;
+        double topY = 280;
+        double bottomY = 560;
+        double centerX = startX + 2 * spacing;
+
+        // Place predefined Kelana Jaya stations (top)
+        for (int i = 0; i < kelanaJayaOrder.length; i++) {
+            String name = kelanaJayaOrder[i];
+            if (stationExists(name) && !name.equals("Masjid Jamek")) {
+                double x = startX + (i * spacing);
                 positions.put(name, new double[]{x, topY});
             }
         }
-    }
-    
-    // Place Ampang line stations
-    for (int i = 0; i < ampangOrder.length; i++) {
-        String name = ampangOrder[i];
-        if (stationExists(name)) {
-            double x = startX + (i * spacing);
-            if (!name.equals("Masjid Jamek")) {
+
+        // Place predefined Ampang stations (bottom)
+        for (int i = 0; i < ampangOrder.length; i++) {
+            String name = ampangOrder[i];
+            if (stationExists(name) && !name.equals("Masjid Jamek")) {
+                double x = startX + (i * spacing);
                 positions.put(name, new double[]{x, bottomY});
             }
         }
-    }
-    
-    // Place Masjid Jamek in the center
-    double centerX = startX + 2 * spacing;
-    if (stationExists("Masjid Jamek")) {
-        positions.put("Masjid Jamek", new double[]{centerX, 340});
-    }
-    
-    if (stationExists("Pasar Seni")) {
-        positions.put("Pasar Seni", new double[]{centerX + 150, topY});
-    }
-    
-    if (stationExists("Plaza Rakyat")) {
-        positions.put("Plaza Rakyat", new double[]{centerX + 150, bottomY});
-    }
-    
-    // Handle additional stations (new vertices)
-    // First, find all new stations and check their connections
-    List<LRTStation> newStations = new ArrayList<>();
-    for (LRTStation station : stations) {
-        if (!positions.containsKey(station.getName())) {
-            newStations.add(station);
+
+        // Masjid Jamek (center)
+        if (stationExists("Masjid Jamek")) {
+            positions.put("Masjid Jamek", new double[]{centerX, 420});
         }
-    }
-    
-    // For each new station, find where it connects
-    for (LRTStation station : newStations) {
-        String name = station.getName();
-        String line = station.getLine();
-        double x, y;
-        
-        // Check if this station has any connections
-        List<String> neighbors = network.getStationNeighbors(name);
-        
-        if (line.equals("Kelana Jaya")) {
-            // Find the position of connected Kelana Jaya stations
-            double avgX = 0;
-            int count = 0;
-            for (String neighbor : neighbors) {
-                if (positions.containsKey(neighbor)) {
-                    LRTStation neighborStation = network.getStation(neighbor);
-                    if (neighborStation != null && neighborStation.getLine().equals("Kelana Jaya")) {
-                        avgX += positions.get(neighbor)[0];
-                        count++;
+
+        // Pasar Seni
+        if (stationExists("Pasar Seni")) {
+            positions.put("Pasar Seni", new double[]{centerX + 150, topY});
+        }
+
+        // Plaza Rakyat
+        if (stationExists("Plaza Rakyat")) {
+            positions.put("Plaza Rakyat", new double[]{centerX + 150, bottomY});
+        }
+
+        // new stations place based on connections
+        Set<String> predefinedNames = new HashSet<>();
+        predefinedNames.addAll(Arrays.asList(kelanaJayaOrder));
+        predefinedNames.addAll(Arrays.asList(ampangOrder));
+
+        // Find new stations
+        List<LRTStation> newStations = new ArrayList<>();
+        for (LRTStation station : stations) {
+            if (!predefinedNames.contains(station.getName())) {
+                newStations.add(station);
+            }
+        }
+
+        // Track how many new stations per line to avoid overlap
+        int kelanaCount = 0;
+        int ampangCount = 0;
+
+        for (LRTStation station : newStations) {
+            String name = station.getName();
+            String line = station.getLine();
+
+            List<String> neighbors = network.getStationNeighbors(name);
+
+            if (line.equals("Kelana Jaya")) {
+                double x = 0;
+                double y = topY - 130;  
+
+                // Find the first connected KJ station
+                for (String neighbor : neighbors) {
+                    if (positions.containsKey(neighbor)) {
+                        LRTStation neighborStation = network.getStation(neighbor);
+                        if (neighborStation != null && neighborStation.getLine().equals("Kelana Jaya")) {
+                            double[] neighborPos = positions.get(neighbor);
+                            if (neighborPos != null) {
+                                x = neighborPos[0];
+                                break;
+                            }
+                        }
                     }
                 }
-            }
-            if (count > 0) {
-                avgX = avgX / count;
-                // Place near the average position of connected stations
-                x = avgX + spacing / 2;
-            } else {
-                // No connections to Kelana Jaya stations, place at the end
-                x = centerX + 150 + spacing + (newStations.indexOf(station) * spacing);
-            }
-            y = topY;
-            
-        } else if (line.equals("Ampang")) {
-            // Find the position of connected Ampang stations
-            double avgX = 0;
-            int count = 0;
-            for (String neighbor : neighbors) {
-                if (positions.containsKey(neighbor)) {
-                    LRTStation neighborStation = network.getStation(neighbor);
-                    if (neighborStation != null && neighborStation.getLine().equals("Ampang")) {
-                        avgX += positions.get(neighbor)[0];
-                        count++;
+
+                // If no Kelana Jaya neighbor found, place at the end
+                if (x == 0) {
+                    x = 900 + (kelanaCount * 160);
+                }
+
+                // If multiple stations connect to same place, offset them
+                x += (kelanaCount * 25);
+                kelanaCount++;
+
+                positions.put(name, new double[]{x, y});
+
+            } else if (line.equals("Ampang")) {
+                double x = 0;
+                double y = bottomY + 130; 
+
+                // Find the first connected Ampang station
+                for (String neighbor : neighbors) {
+                    if (positions.containsKey(neighbor)) {
+                        LRTStation neighborStation = network.getStation(neighbor);
+                        if (neighborStation != null && neighborStation.getLine().equals("Ampang")) {
+                            double[] neighborPos = positions.get(neighbor);
+                            if (neighborPos != null) {
+                                x = neighborPos[0];
+                                break;
+                            }
+                        }
                     }
                 }
-            }
-            if (count > 0) {
-                avgX = avgX / count;
-                // Place near the average position of connected stations
-                x = avgX + spacing / 2;
+
+                // If no Ampang neighbor found, place at the end
+                if (x == 0) {
+                    x = 900 + (ampangCount * 160);
+                }
+
+                // If multiple stations connect to same place, offset them
+                x += (ampangCount * 25);
+                ampangCount++;
+
+                positions.put(name, new double[]{x, y});
+
             } else {
-                // No connections to Ampang stations, place at the end
-                x = centerX + 150 + spacing + (newStations.indexOf(station) * spacing);
+                // Other stations - place in separate area
+                positions.put(name, new double[]{100 + (newStations.indexOf(station) * 160), 700});
             }
-            y = bottomY;
-            
-        } else {
-            // Other stations - place in a new row
-            x = 100 + (newStations.indexOf(station) * 180);
-            y = 650 + (newStations.indexOf(station) * 70);
         }
-        
-        positions.put(name, new double[]{x, y});
     }
-}
 
     private boolean stationExists(String name) {
         return network.getStation(name) != null;
@@ -232,19 +250,15 @@ public class GraphVisualizer extends Application {
 
                     Color lineColor;
                     double strokeWidth;
-
                     LRTStation toStation = network.getStation(toName);
 
-                    if (station.getLine().equals("Kelana Jaya") && toStation != null
-                            && toStation.getLine().equals("Kelana Jaya")) {
+                    if (station.getLine().equals("Kelana Jaya") && toStation != null && toStation.getLine().equals("Kelana Jaya")) {
                         lineColor = KELANA_JAYA_COLOR;
                         strokeWidth = 6;
-                    } else if (station.getLine().equals("Ampang") && toStation != null
-                            && toStation.getLine().equals("Ampang")) {
+                    } else if (station.getLine().equals("Ampang") && toStation != null && toStation.getLine().equals("Ampang")) {
                         lineColor = AMPANG_COLOR;
                         strokeWidth = 6;
-                    } else if (station.getName().equals("Masjid Jamek")
-                            || (toStation != null && toStation.getName().equals("Masjid Jamek"))) {
+                    } else if (station.getName().equals("Masjid Jamek") || (toStation != null && toStation.getName().equals("Masjid Jamek"))) {
                         lineColor = INTERCHANGE_COLOR;
                         strokeWidth = 6;
                     } else {
@@ -252,13 +266,11 @@ public class GraphVisualizer extends Application {
                         strokeWidth = 3;
                     }
 
-                    // Draw shadow line
                     Line shadowLine = new Line(fromPos[0] + 2, fromPos[1] + 2, toPos[0] + 2, toPos[1] + 2);
                     shadowLine.setStroke(Color.rgb(0, 0, 0, 0.1));
                     shadowLine.setStrokeWidth(strokeWidth + 3);
                     pane.getChildren().add(shadowLine);
 
-                    // Main line
                     Line line = new Line(fromPos[0], fromPos[1], toPos[0], toPos[1]);
                     line.setStroke(lineColor);
                     line.setStrokeWidth(strokeWidth);
@@ -268,7 +280,6 @@ public class GraphVisualizer extends Application {
                         glow.setLevel(0.2);
                         line.setEffect(glow);
                     }
-
                     pane.getChildren().add(line);
                     drawnEdges.add(key);
                 }
@@ -291,12 +302,10 @@ public class GraphVisualizer extends Application {
             double y = pos[1];
             double radius = 40;
 
-            // Shadow
             Circle shadowCircle = new Circle(x + 2, y + 3, radius);
             shadowCircle.setFill(Color.rgb(0, 0, 0, 0.12));
             pane.getChildren().add(shadowCircle);
 
-            // Main circle
             Circle circle = new Circle(x, y, radius);
 
             if (station.isInterchange()) {
@@ -337,7 +346,6 @@ public class GraphVisualizer extends Application {
             circle.setEffect(shadow);
             pane.getChildren().add(circle);
 
-            // Station code
             String stationCode = getStationCode(station.getName());
             Text codeText = new Text(stationCode);
             codeText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
@@ -347,48 +355,55 @@ public class GraphVisualizer extends Application {
             codeText.setY(y + 6);
             pane.getChildren().add(codeText);
 
-            // Station name - position based on line
             Text nameText = new Text(station.getName());
             nameText.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 17));
             nameText.setFill(Color.rgb(40, 50, 70));
             double nameWidth = nameText.getLayoutBounds().getWidth();
 
-            // Check if this is a Kelana Jaya line station (top row)
             boolean isKelanaJaya = station.getLine().equals("Kelana Jaya") && !station.isInterchange();
-            // Check if this is an Ampang line station (bottom row)
             boolean isAmpang = station.getLine().equals("Ampang") && !station.isInterchange();
+            boolean isKelanaNew = isKelanaJaya && y < 150;      
+            boolean isAmpangNew = isAmpang && y > 500;         
 
-            if (isKelanaJaya) {
-                // Place name ABOVE the circle for Kelana Jaya stations
+            if (isKelanaNew) {
+                // New Kelana stations label above the circle
                 nameText.setX(x - nameWidth / 2);
                 nameText.setY(y - radius - 10);
-            } else if (isAmpang) {
-                // Place name BELOW the circle for Ampang stations
+            } 
+            else if (isAmpangNew) {
+                // New Ampang stations label below the circle
                 nameText.setX(x - nameWidth / 2);
                 nameText.setY(y + radius + 35);
-            } else if (station.isInterchange()) {
-                // Interchange station - name on the LEFT side
+            } 
+            else if (isKelanaJaya && !isKelanaNew) {
+                // Existing Kelana label above
+                nameText.setX(x - nameWidth / 2);
+                nameText.setY(y - radius - 10);
+            } 
+            else if (isAmpang && !isAmpangNew) {
+                // Existing Ampang label below
+                nameText.setX(x - nameWidth / 2);
+                nameText.setY(y + radius + 35);
+            } 
+            else if (station.isInterchange()) {
+                // Interchange label on the side
                 nameText.setX(x + radius + 15);
                 nameText.setY(y + 6);
-            } else {
-                // Default - below
+            } 
+            else {
                 nameText.setX(x - nameWidth / 2);
                 nameText.setY(y + radius + 35);
             }
 
             pane.getChildren().add(nameText);
-
         }
     }
 
     private void drawInfoPanel(Pane pane) {
-        double startX = 1150;
-        double startY = 30;
+        double startX = 1100;
+        double startY = 300;
 
-        // Info panel background - BIGGER to fit all text
-        javafx.scene.shape.Rectangle infoBg = new javafx.scene.shape.Rectangle(
-                startX - 20, startY - 20, 260, 260
-        );
+        javafx.scene.shape.Rectangle infoBg = new javafx.scene.shape.Rectangle(startX - 20, startY - 20, 260, 260);
         infoBg.setFill(Color.rgb(255, 255, 255, 0.92));
         infoBg.setStroke(Color.rgb(220, 225, 235));
         infoBg.setArcWidth(12);
@@ -398,7 +413,6 @@ public class GraphVisualizer extends Application {
 
         double yOffset = startY + 20;
 
-        // Title - BIGGER
         Text infoTitle = new Text("Network Info");
         infoTitle.setX(startX);
         infoTitle.setY(yOffset + 10);
@@ -408,7 +422,6 @@ public class GraphVisualizer extends Application {
 
         yOffset += 45;
 
-        // Stations count - BIGGER
         Text stationsText = new Text("Stations: " + network.getSize());
         stationsText.setX(startX);
         stationsText.setY(yOffset + 5);
@@ -418,7 +431,6 @@ public class GraphVisualizer extends Application {
 
         yOffset += 35;
 
-        // Connections count - BIGGER
         Text connectionsText = new Text("Connections: " + network.countEdges());
         connectionsText.setX(startX);
         connectionsText.setY(yOffset + 5);
@@ -428,7 +440,6 @@ public class GraphVisualizer extends Application {
 
         yOffset += 40;
 
-        // Line info - Kelana Jaya - BIGGER
         Circle dot1 = new Circle(startX + 8, yOffset + 4, 8);
         dot1.setFill(KELANA_JAYA_COLOR);
         pane.getChildren().add(dot1);
@@ -441,7 +452,6 @@ public class GraphVisualizer extends Application {
 
         yOffset += 35;
 
-        // Line info - Ampang - BIGGER
         Circle dot2 = new Circle(startX + 8, yOffset + 4, 8);
         dot2.setFill(AMPANG_COLOR);
         pane.getChildren().add(dot2);
@@ -454,7 +464,6 @@ public class GraphVisualizer extends Application {
 
         yOffset += 35;
 
-        // Interchange - BIGGER
         Circle dot3 = new Circle(startX + 8, yOffset + 4, 8);
         dot3.setFill(INTERCHANGE_COLOR);
         dot3.setStroke(INTERCHANGE_DARK);
