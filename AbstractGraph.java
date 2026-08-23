@@ -24,14 +24,14 @@ public abstract class AbstractGraph<V> implements Graph<V> {
 
     protected AbstractGraph(List<Edge> edges, int numberOfVertices) {
         for (int i = 0; i < numberOfVertices; i++) {
-            addVertex((V) (new Integer(i)));
+            addVertex((V) Integer.valueOf(i));
         }
         createAdjacencyLists(edges, numberOfVertices);
     }
 
     protected AbstractGraph(int[][] edges, int numberOfVertices) {
         for (int i = 0; i < numberOfVertices; i++) {
-            addVertex((V) (new Integer(i)));
+            addVertex((V) Integer.valueOf(i));
         }
         createAdjacencyLists(edges, numberOfVertices);
     }
@@ -48,27 +48,22 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         }
     }
 
-    @Override
     public int getSize() {
         return vertices.size();
     }
 
-    @Override
     public List<V> getVertices() {
         return vertices;
     }
 
-    @Override
     public V getVertex(int index) {
         return vertices.get(index);
     }
 
-    @Override
     public int getIndex(V v) {
         return vertices.indexOf(v);
     }
 
-    @Override
     public List<Integer> getNeighbors(int index) {
         List<Integer> result = new ArrayList<>();
         for (Edge e : neighbors.get(index)) {
@@ -77,12 +72,10 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         return result;
     }
 
-    @Override
     public int getDegree(int v) {
         return neighbors.get(v).size();
     }
 
-    @Override
     public void printEdges() {
         for (int u = 0; u < neighbors.size(); u++) {
             System.out.print(getVertex(u) + " (" + u + "): ");
@@ -93,13 +86,11 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         }
     }
 
-    @Override
     public void clear() {
         vertices.clear();
         neighbors.clear();
     }
 
-    @Override
     public boolean addVertex(V vertex) {
         if (!vertices.contains(vertex)) {
             vertices.add(vertex);
@@ -123,14 +114,13 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         return false;
     }
 
-    @Override
     public boolean addEdge(int u, int v) {
         return addEdge(new Edge(u, v));
     }
 
-    // ============ EDGE INNER CLASS ============
-    
+    // edge class   
     public static class Edge {
+
         public int u;
         public int v;
 
@@ -144,34 +134,7 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         }
     }
 
-    // ============ DFS TRAVERSAL ============
-    
-    @Override
-    public Tree dfs(int v) {
-        List<Integer> searchOrder = new ArrayList<>();
-        int[] parent = new int[vertices.size()];
-        for (int i = 0; i < parent.length; i++) {
-            parent[i] = -1;
-        }
-        boolean[] isVisited = new boolean[vertices.size()];
-        dfs(v, parent, searchOrder, isVisited);
-        return new Tree(v, parent, searchOrder);
-    }
-
-    private void dfs(int u, int[] parent, List<Integer> searchOrder, boolean[] isVisited) {
-        searchOrder.add(u);
-        isVisited[u] = true;
-        for (Edge e : neighbors.get(u)) {
-            if (!isVisited[e.v]) {
-                parent[e.v] = u;
-                dfs(e.v, parent, searchOrder, isVisited);
-            }
-        }
-    }
-
-    // ============ BFS TRAVERSAL ============
-    
-    @Override
+    // BFS traversal
     public Tree bfs(int v) {
         List<Integer> searchOrder = new ArrayList<>();
         int[] parent = new int[vertices.size()];
@@ -196,9 +159,32 @@ public abstract class AbstractGraph<V> implements Graph<V> {
         return new Tree(v, parent, searchOrder);
     }
 
-    // ============ TREE INNER CLASS ============
-    
+    // DFS traversal
+    public Tree dfs(int v) {
+        List<Integer> searchOrder = new ArrayList<>();
+        int[] parent = new int[vertices.size()];
+        for (int i = 0; i < parent.length; i++) {
+            parent[i] = -1;
+        }
+        boolean[] isVisited = new boolean[vertices.size()];
+        dfs(v, parent, searchOrder, isVisited);
+        return new Tree(v, parent, searchOrder);
+    }
+
+    private void dfs(int u, int[] parent, List<Integer> searchOrder, boolean[] isVisited) {
+        searchOrder.add(u);
+        isVisited[u] = true;
+        for (Edge e : neighbors.get(u)) {
+            if (!isVisited[e.v]) {
+                parent[e.v] = u;
+                dfs(e.v, parent, searchOrder, isVisited);
+            }
+        }
+    }
+
+    // tree inner 
     public class Tree {
+
         private int root;
         private int[] parent;
         private List<Integer> searchOrder;
