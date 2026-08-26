@@ -22,18 +22,18 @@ public class LRTStation {
     }
     
     public String toString() {
-        if (isInterchange()) {
-            return "★ " + name + " (Interchange)";
-        }
-        return name + " (" + line + " Line)";
+    if (isInterchange()) {
+        return name + " [INTERCHANGE]";
     }
+    return name + " (" + line + " Line)";
+}
     
     public String getDisplayName() {
-        if (isInterchange()) {
-            return "★ " + name;
-        }
-        return name;
+    if (isInterchange()) {
+        return name + " [INTERCHANGE]";
     }
+    return name;
+}
 
     public boolean equals(Object o) {
         if (this == o) return true;
