@@ -27,28 +27,50 @@ public class GraphVisualizer extends Application {
     private static final Color AMPANG_COLOR = Color.rgb(220, 50, 120);
     private static final Color INTERCHANGE_COLOR = Color.rgb(255, 185, 0);
     private static final Color INTERCHANGE_DARK = Color.rgb(200, 140, 0);
+    private static boolean javafxStarted = false;
+    private static GraphVisualizer instance;
 
     public static void displayGraph(UnweightedGraph<LRTStation> graph, String windowTitle) {
         network = graph;
         title = windowTitle;
 
-        if (primaryStage != null && isShowing) {
-            primaryStage.toFront();
+        if (!javafxStarted) {
+            javafxStarted = true;
+            // First time launch() actually starts the JavaFX runtime and will call start
+            new Thread(() -> {
+                Application.launch(GraphVisualizer.class);
+            }).start();
             return;
         }
 
-        // creates a NEW JavaFX instance
-        new Thread(() -> {
-            Application.launch(GraphVisualizer.class);
-        }).start();
+        // JavaFX runtime is already running (even if the window was closed/hidden).
+        Platform.runLater(() -> {
+            if (primaryStage != null && instance != null) {
+                instance.refreshStage();
+            }
+        });
     }
 
     public void start(Stage stage) {
+        instance = this;
         primaryStage = stage;
 
+        // Prevent the JavaFX runtime from auto-shutting-down when the window is closed/hidden
+        Platform.setImplicitExit(false);
+
+        stage.setOnCloseRequest(e -> {
+            isShowing = false;
+            stage.hide();
+        });
+
+        refreshStage();
+    }
+
+    // Rebuilds the pane/scene from the current `network` and (re)shows the stage.
+    // Called both on first launch and on every later "Display Graph" click.
+    private void refreshStage() {
         if (network == null || network.getSize() == 0) {
             System.out.println("Network is empty. Nothing to display.");
-            Platform.exit();
             return;
         }
 
@@ -62,15 +84,11 @@ public class GraphVisualizer extends Application {
         drawInfoPanel(pane);
 
         Scene scene = new Scene(pane, 1400, 800);
-        stage.setTitle(title);
-        stage.setScene(scene);
+        primaryStage.setTitle(title);
+        primaryStage.setScene(scene);
 
-        stage.setOnCloseRequest(e -> {
-            isShowing = false;
-            stage.hide();  
-        });
-
-        stage.show();
+        primaryStage.show();
+        primaryStage.toFront();
         isShowing = true;
     }
 
