@@ -58,23 +58,31 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         if (index == -1) {
             return false;
         }
+
+        // Remove the vertex and its adjacency list
         vertices.remove(index);
         neighbors.remove(index);
+
+        // Update all remaining edges
         for (int i = 0; i < neighbors.size(); i++) {
-            List<Edge> edgesToRemove = new ArrayList<>();
+            List<Edge> newEdges = new ArrayList<>();
             for (Edge e : neighbors.get(i)) {
-                if (e.u == index || e.v == index) {
-                    edgesToRemove.add(e);
-                } else {
-                    if (e.u > index) {
-                        e.u--;
-                    }
-                    if (e.v > index) {
-                        e.v--;
-                    }
+                int newU = e.u;
+                int newV = e.v;
+
+                if (e.u > index) {
+                    newU = e.u - 1;
+                }
+                if (e.v > index) {
+                    newV = e.v - 1;
+                }
+
+                // Only add if both endpoints exist and no self-loop
+                if (newU >= 0 && newV >= 0 && newU != newV) {
+                    newEdges.add(new Edge(newU, newV));
                 }
             }
-            neighbors.get(i).removeAll(edgesToRemove);
+            neighbors.set(i, newEdges);
         }
         return true;
     }
@@ -193,25 +201,6 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         Collections.reverse(result);
         return result;
-    }
-
-    public String getStatistics() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("═══════════════════════════════════════════════════════════\n");
-        sb.append("              GRAPH STATISTICS\n");
-        sb.append("═══════════════════════════════════════════════════════════\n");
-        sb.append("Total Stations (V): ").append(getSize()).append("\n");
-        sb.append("Total Connections (E): ").append(countEdges()).append("\n");
-        sb.append("\nStation Degrees:\n");
-        for (V v : vertices) {
-            LRTStation station = (LRTStation) v;
-            int index = getIndex(v);
-            int degree = getDegree(index);
-            String marker = station.getName().equalsIgnoreCase("Masjid Jamek") ? " ★" : "";
-            sb.append("  ").append(station.getName()).append(marker).append(": ").append(degree).append(" connections\n");
-        }
-        sb.append("═══════════════════════════════════════════════════════════\n");
-        return sb.toString();
     }
 
     // Check if graph is connected
