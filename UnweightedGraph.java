@@ -68,9 +68,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         for (int i = 0; i < neighbors.size(); i++) {
             List<Edge> newEdges = new ArrayList<>();
             for (Edge e : neighbors.get(i)) {
-                // Drop any edge that referenced the removed vertex —
-                // otherwise its old index gets silently reassigned to
-                // whichever station now occupies that slot.
+                // Drop any edge that referenced the removed vertex 
                 if (e.u == index || e.v == index) {
                     continue;
                 }
