@@ -12,6 +12,5 @@ public interface Graph<V> {
     public boolean addVertex(V v);
     public boolean addEdge(int u, int v);
   
-    public AbstractGraph<V>.Tree dfs(int v);
     public AbstractGraph<V>.Tree bfs(int v);
 }
