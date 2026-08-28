@@ -39,10 +39,10 @@ public class LRTStation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LRTStation station = (LRTStation) o;
-        return Objects.equals(name, station.name);
+        return name != null && name.equalsIgnoreCase(station.name);
     }
 
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(name == null ? null : name.toLowerCase());
     }
 }
