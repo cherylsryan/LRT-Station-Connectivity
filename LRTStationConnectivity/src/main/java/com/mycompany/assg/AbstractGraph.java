@@ -4,7 +4,9 @@
  */
 package com.mycompany.assg;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 public abstract class AbstractGraph<V> implements Graph<V> {
 
@@ -163,29 +165,6 @@ public abstract class AbstractGraph<V> implements Graph<V> {
             }
         }
         return new Tree(v, parent, searchOrder);
-    }
-
-    // DFS traversal
-    public Tree dfs(int v) {
-        List<Integer> searchOrder = new ArrayList<>();
-        int[] parent = new int[vertices.size()];
-        for (int i = 0; i < parent.length; i++) {
-            parent[i] = -1;
-        }
-        boolean[] isVisited = new boolean[vertices.size()];
-        dfs(v, parent, searchOrder, isVisited);
-        return new Tree(v, parent, searchOrder);
-    }
-
-    private void dfs(int u, int[] parent, List<Integer> searchOrder, boolean[] isVisited) {
-        searchOrder.add(u);
-        isVisited[u] = true;
-        for (Edge e : neighbors.get(u)) {
-            if (!isVisited[e.v]) {
-                parent[e.v] = u;
-                dfs(e.v, parent, searchOrder, isVisited);
-            }
-        }
     }
 
     // tree inner 

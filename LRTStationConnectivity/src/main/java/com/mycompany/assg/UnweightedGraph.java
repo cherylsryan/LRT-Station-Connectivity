@@ -4,85 +4,91 @@
  */
 package com.mycompany.assg;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
 
 public class UnweightedGraph<V> extends AbstractGraph<V> {
-
+ 
     public UnweightedGraph() {
     }
-
+ 
     public UnweightedGraph(V[] vertices, int[][] edges) {
         super(vertices, edges);
     }
-
+ 
     public UnweightedGraph(List<V> vertices, List<AbstractGraph.Edge> edges) {
         super(vertices, edges);
     }
-
+ 
     public UnweightedGraph(List<AbstractGraph.Edge> edges, int numberOfVertices) {
         super(edges, numberOfVertices);
     }
-
+ 
     public UnweightedGraph(int[][] edges, int numberOfVertices) {
         super(edges, numberOfVertices);
     }
-
+ 
     // graph operations
     public boolean addVertex(String name, String line) {
         return addVertex((V) new LRTStation(name, line));
     }
-
+ 
     public boolean addEdge(String fromName, String toName) {
         int fromIndex = getStationIndex(fromName);
         int toIndex = getStationIndex(toName);
-
+ 
         if (fromIndex == -1 || toIndex == -1) {
             return false;
         }
-
+ 
         if (fromIndex == toIndex) {
             System.out.println("Self-loops are not allowed.");
             return false;
         }
-
+ 
         // Check if edge already exists
         for (Edge e : neighbors.get(fromIndex)) {
             if (e.v == toIndex) {
                 return false;
             }
         }
-
+ 
         // Add edge in both directions
         neighbors.get(fromIndex).add(new Edge(fromIndex, toIndex));
         neighbors.get(toIndex).add(new Edge(toIndex, fromIndex));
-
+ 
         return true;
     }
-
+ 
     public boolean removeVertex(String name) {
         int index = getStationIndex(name);
         if (index == -1) {
             return false;
         }
-
+ 
         // Remove the vertex and its adjacency list
         vertices.remove(index);
         neighbors.remove(index);
-
+ 
         // Update all remaining edges
         for (int i = 0; i < neighbors.size(); i++) {
             List<Edge> newEdges = new ArrayList<>();
             for (Edge e : neighbors.get(i)) {
+                // Drop any edge that referenced the removed vertex 
+                if (e.u == index || e.v == index) {
+                    continue;
+                }
+ 
                 int newU = e.u;
                 int newV = e.v;
-
+ 
                 if (e.u > index) {
                     newU = e.u - 1;
                 }
                 if (e.v > index) {
                     newV = e.v - 1;
                 }
-
+ 
                 // Only add if both endpoints exist and no self-loop
                 if (newU >= 0 && newV >= 0 && newU != newV) {
                     newEdges.add(new Edge(newU, newV));
@@ -92,15 +98,15 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return true;
     }
-
+ 
     public boolean removeEdge(String fromName, String toName) {
         int fromIndex = getStationIndex(fromName);
         int toIndex = getStationIndex(toName);
-
+ 
         if (fromIndex == -1 || toIndex == -1) {
             return false;
         }
-
+ 
         // Check if edge exists
         boolean edgeFound = false;
         for (Edge e : neighbors.get(fromIndex)) {
@@ -109,18 +115,18 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
                 break;
             }
         }
-
+ 
         if (!edgeFound) {
             return false;
         }
-
+ 
         // Remove edge in both directions
         neighbors.get(fromIndex).removeIf(e -> e.v == toIndex);
         neighbors.get(toIndex).removeIf(e -> e.v == fromIndex);
-
+ 
         return true;
     }
-
+ 
     public int getStationIndex(String name) {
         for (int i = 0; i < vertices.size(); i++) {
             LRTStation station = (LRTStation) vertices.get(i);
@@ -130,7 +136,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return -1;
     }
-
+ 
     public LRTStation getStation(String name) {
         int index = getStationIndex(name);
         if (index == -1) {
@@ -138,11 +144,11 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return (LRTStation) vertices.get(index);
     }
-
+ 
     public boolean stationExists(String name) {
         return getStationIndex(name) != -1;
     }
-
+ 
     public List<LRTStation> getAllStations() {
         List<LRTStation> result = new ArrayList<>();
         for (V v : vertices) {
@@ -150,7 +156,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return result;
     }
-
+ 
     public List<String> getStationNeighbors(String name) {
         int index = getStationIndex(name);
         if (index == -1) {
@@ -163,7 +169,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return result;
     }
-
+ 
     public List<String> bfsTraversal(String startName) {
         int startIndex = getStationIndex(startName);
         if (startIndex == -1) {
@@ -177,38 +183,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return result;
     }
-
-    public List<String> dfsTraversal(String startName) {
-        int startIndex = getStationIndex(startName);
-        if (startIndex == -1) {
-            return new ArrayList<>();
-        }
-        Tree tree = dfs(startIndex);
-        List<String> result = new ArrayList<>();
-        for (int idx : tree.getSearchOrder()) {
-            LRTStation station = (LRTStation) vertices.get(idx);
-            result.add(station.getName());
-        }
-        return result;
-    }
-
-    public List<String> findPath(String fromName, String toName) {
-        int fromIndex = getStationIndex(fromName);
-        int toIndex = getStationIndex(toName);
-        if (fromIndex == -1 || toIndex == -1) {
-            return new ArrayList<>();
-        }
-        Tree tree = bfs(fromIndex);
-        List<V> path = tree.getPath(toIndex);
-        List<String> result = new ArrayList<>();
-        for (V v : path) {
-            LRTStation station = (LRTStation) v;
-            result.add(station.getName());
-        }
-        Collections.reverse(result);
-        return result;
-    }
-
+ 
     // Check if graph is connected
     public boolean isConnected() {
         if (getSize() == 0) {
@@ -217,7 +192,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         List<String> visited = bfsTraversal(((LRTStation) vertices.get(0)).getName());
         return visited.size() == getSize();
     }
-
+ 
     public int countEdges() {
         int count = 0;
         for (List<Edge> edgeList : neighbors) {
@@ -225,7 +200,7 @@ public class UnweightedGraph<V> extends AbstractGraph<V> {
         }
         return count / 2;
     }
-
+ 
     public void printAllEdges() {
         System.out.println("\n=== CURRENT EDGES ===");
         int count = 0;
